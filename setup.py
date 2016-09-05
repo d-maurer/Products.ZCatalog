@@ -65,6 +65,7 @@ setup(
         'zope.interface',
         'zope.schema',
         'zope.testing',
+        'plone.memoize',
     ],
     include_package_data=True,
     zip_safe=False,
