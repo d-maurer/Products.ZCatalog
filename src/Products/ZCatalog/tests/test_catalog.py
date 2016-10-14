@@ -12,6 +12,7 @@
 ##############################################################################
 
 import unittest
+from zope.testing import cleanup
 
 from itertools import chain
 import random
@@ -31,6 +32,9 @@ class ZDummy(ExtensionClass.Base):
 
     def title(self):
         return '%d' % self.num
+
+    def getPhysicalPath(self):
+        return ['/', self.title]
 
 
 class Dummy(ExtensionClass.Base):
@@ -381,7 +385,7 @@ class TestCatalog(unittest.TestCase):
         self.assertEqual(len(a), 0)
 
 
-class TestCatalogSortBatch(unittest.TestCase):
+class TestCatalogSortBatch(cleanup.CleanUp, unittest.TestCase):
 
     upper = 100
 
@@ -950,7 +954,7 @@ class TestRangeSearch(unittest.TestCase):
                              "%d vs [%d,%d]" % (r.number, m, n))
 
 
-class TestMergeResults(unittest.TestCase):
+class TestMergeResults(cleanup.CleanUp, unittest.TestCase):
 
     def _make_one(self):
         from Products.ZCatalog.Catalog import Catalog
@@ -959,16 +963,17 @@ class TestMergeResults(unittest.TestCase):
     def _make_many(self):
         from Products.ZCatalog.Catalog import mergeResults
         catalogs = []
-        for i in range(3):
+        for ci in range(3):
             cat = self._make_one()
             cat.lexicon = PLexicon('lexicon')
             cat.addIndex('num', FieldIndex('num'))
             cat.addIndex('big', FieldIndex('big'))
             cat.addIndex('number', FieldIndex('number'))
-            i = ZCTextIndex('title', caller=cat, index_factory=OkapiIndex,
-                            lexicon_id='lexicon')
-            cat.addIndex('title', i)
-            cat = cat.__of__(ZDummy(16336))
+            text_index = ZCTextIndex('title', caller=cat,
+                                     index_factory=OkapiIndex,
+                                     lexicon_id='lexicon')
+            cat.addIndex('title', text_index)
+            cat = cat.__of__(ZDummy(16336 + ci))
             for i in range(10):
                 obj = ZDummy(i)
                 obj.big = i > 5
