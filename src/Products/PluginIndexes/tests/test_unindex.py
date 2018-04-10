@@ -16,9 +16,6 @@ import unittest
 from BTrees.IIBTree import difference
 from OFS.SimpleItem import SimpleItem
 from Testing.makerequest import makerequest
-from Acquisition import aq_base
-import ZODB
-import transaction
 
 from Products.ZCatalog.query import IndexQuery
 
@@ -196,51 +193,3 @@ class TestUnIndex(unittest.TestCase):
         query = IndexQuery({'counter': 42}, 'counter')
         res = index.query_index(query)
         self.assertListEqual(list(res), [])
-
-    def test_getCounterKey(self):
-        index = self._makeOne('counter')
-
-        class Dummy(object):
-            def __init__(self, obj_id):
-                self.id = obj_id
-                self.counter = 'counter_{0}'.format(obj_id)
-
-        # check counter key of initialized empty index
-        # counter key is a tuple of the counts of index operations and
-        # transaction id (tid) of the counter variable
-
-        key0 = index.getCounterKey()
-        self.assertEqual(key0, (0, b'\x00\x00\x00\x00\x00\x00\x00\x00'))
-
-        connection = ZODB.connection(None)
-        connection.add(aq_base(index))
-
-        # first object to index
-        obj = Dummy(1)
-        index.index_object(obj.id, obj)
-
-        # indexing of object changes counter but not the tid
-        key1 = index.getCounterKey()
-        self.assertEqual(key1, (1, b'\x00\x00\x00\x00\x00\x00\x00\x00'))
-
-        transaction.commit()
-
-        # commit changes the tid but not the counter
-        key2 = index.getCounterKey()
-        self.assertEqual(key2[0], key1[0])
-        self.assertFalse(key2[1] == key1[1])
-
-        # second object to index
-        obj = Dummy(2)
-        index.index_object(obj.id, obj)
-
-        # indexing of object changes counter but not the tid
-        key3 = index.getCounterKey()
-        self.assertFalse(key3[0] == key2[0])
-        self.assertEqual(key3[1], key2[1])
-
-        transaction.abort()
-
-        # abort resets counter key to previos state
-        key4 = index.getCounterKey()
-        self.assertEqual(key4, key2)

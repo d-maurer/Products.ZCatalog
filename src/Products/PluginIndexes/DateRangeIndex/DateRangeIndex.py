@@ -248,9 +248,8 @@ class DateRangeIndex(UnIndex):
         tid = str(term)
 
         # unique index identifier
-        iid = (self.__class__.__name__,
-               self.id, self.getCounterKey())
-
+        iid = '_%s_%s_%s' % (self.__class__.__name__,
+                             self.id, self.getCounter())
         # record identifier
         if resultset is None:
             rid = '_%s' % (tid, )
